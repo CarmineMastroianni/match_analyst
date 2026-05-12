@@ -1,0 +1,12 @@
+{
+  "name": "Scherma · Match Analyst",
+  "short_name": "Scherma MA",
+  "description": "Strumento di match analysis per la scherma — MVP front-end mockato.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0F14",
+  "theme_color": "#0D0F14",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

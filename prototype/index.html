@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0D0F14">
+<title>Scherma · Match Analyst — Prototipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-dark: #0D0F14;
+    --bg-panel: #151923;
+    --bg-panel-2: #1F2330;
+    --bg-light: #F7F5F0;
+    --bg-light-2: #FFFFFF;
+    --border: #2A2F3D;
+    --border-light: #E3E5EC;
+    --text: #F2F3F7;
+    --text-dim: #8A91A3;
+    --text-dark: #1F2330;
+    --text-dark-dim: #5A6070;
+    --red: #C8102E;
+    --red-hot: #E11D3C;
+    --blue: #1E3A8A;
+    --blue-hi: #3B5FD9;
+    --warn: #F59E0B;
+    --ok: #10B981;
+    --danger: #EF4444;
+    --green: #22C55E;
+    --green-dark: #16A34A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg-light);
+    color: var(--text-dark);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .cond { font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.01em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ---- Layout base ---- */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 240px; background: var(--bg-dark); color: var(--text);
+    padding: 24px 0; display: flex; flex-direction: column;
+    border-right: 1px solid var(--border);
+    position: sticky; top: 0; height: 100vh;
+  }
+  .brand {
+    padding: 0 24px 28px; display: flex; align-items: center; gap: 12px;
+    border-bottom: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .brand-mark {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-hot) 100%);
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 22px; color: #fff;
+  }
+  .brand-txt { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .brand-txt span { color: var(--red-hot); }
+  .nav { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
+  .nav a {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 14px; color: var(--text-dim); text-decoration: none;
+    font-size: 14px; font-weight: 500;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav a:hover { color: var(--text); background: var(--bg-panel); }
+  .nav a.active { color: var(--text); background: var(--bg-panel); border-left-color: var(--red); }
+  .nav a .ico { font-size: 16px; width: 18px; text-align: center; }
+  .nav-section {
+    padding: 16px 14px 6px; font-size: 11px; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;
+  }
+  .sidebar-footer {
+    padding: 16px 24px; border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--blue), var(--blue-hi));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 13px; color: #fff;
+  }
+  .avatar-lbl { font-size: 13px; }
+  .avatar-lbl b { display: block; font-weight: 600; color: var(--text); }
+  .avatar-lbl span { color: var(--text-dim); font-size: 11px; }
+
+  .main { flex: 1; min-width: 0; }
+  .topbar {
+    height: 64px; border-bottom: 1px solid var(--border-light);
+    padding: 0 32px; display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-light-2); position: sticky; top: 0; z-index: 5;
+  }
+  .breadcrumbs { font-size: 13px; color: var(--text-dark-dim); }
+  .breadcrumbs b { color: var(--text-dark); font-weight: 600; }
+  .topbar-actions { display: flex; align-items: center; gap: 12px; }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px; background: var(--bg-light); border: 1px solid var(--border-light);
+    border-radius: 4px; width: 280px; font-size: 13px; color: var(--text-dark-dim);
+  }
+
+  .content { padding: 32px; max-width: 1440px; }
+  .page-title { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 28px; }
+  .page-title h1 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 40px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.02em; line-height: 1;
+  }
+  .page-title .sub { color: var(--text-dark-dim); font-size: 14px; margin-top: 6px; }
+
+  /* ---- Buttons ---- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border: none; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13.5px;
+    text-decoration: none; transition: all 0.15s;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .btn-primary { background: var(--red); color: #fff; padding-left: 22px; padding-right: 22px; }
+  .btn-primary:hover { background: var(--red-hot); }
+  .btn-ghost { background: transparent; color: var(--text-dark); border: 1px solid var(--border-light); clip-path: none; }
+  .btn-ghost:hover { background: var(--bg-light); }
+  .btn-lg { padding: 14px 24px; font-size: 14px; }
+
+  /* ---- Cards / grid ---- */
+  .grid { display: grid; gap: 20px; }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .card {
+    background: var(--bg-light-2); border: 1px solid var(--border-light);
+    padding: 22px; position: relative;
+  }
+  .card::before {
+    content: ''; position: absolute; top: 0; left: 0;
+    width: 40px; height: 3px; background: var(--red);
+  }
+  .card.accent-blue::before { background: var(--blue-hi); }
+  .card h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dark-dim);
+    margin-bottom: 10px;
+  }
+  .kpi-value {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 48px; font-weight: 700;
+    line-height: 1; color: var(--text-dark);
+  }
+  .kpi-delta { font-size: 12px; color: var(--ok); margin-top: 6px; font-weight: 600; }
+  .kpi-delta.down { color: var(--danger); }
+
+  /* ---- Match cards (dashboard) ---- */
+  .match-hero {
+    background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f2e 100%);
+    color: var(--text); padding: 24px 26px; position: relative;
+    overflow: hidden; cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .match-hero:hover { transform: translateY(-2px); }
+  .match-hero::after {
+    content: ''; position: absolute; right: -20px; top: -20px;
+    width: 140px; height: 140px; border: 1px solid rgba(200, 16, 46, 0.2);
+    transform: rotate(45deg);
+  }
+  .match-tag {
+    display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--red-hot); margin-bottom: 10px;
+  }
+  .match-players { display: flex; align-items: center; gap: 18px; margin: 10px 0 16px; }
+  .player { flex: 1; }
+  .player-name {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px;
+    text-transform: uppercase; letter-spacing: 0.02em; line-height: 1.1;
+  }
+  .player-sub { font-size: 12px; color: var(--text-dim); margin-top: 3px; }
+  .vs { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; color: var(--red-hot); letter-spacing: 0.15em; }
+  .match-meta { display: flex; gap: 20px; font-size: 12px; color: var(--text-dim); margin-bottom: 18px; }
+  .match-meta b { color: var(--text); font-weight: 500; }
+  .match-cta {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .match-status {
+    display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600;
+  }
+  .dot { width: 8px; height: 8px; background: var(--ok); border-radius: 50%; }
+  .dot.live { background: var(--red-hot); box-shadow: 0 0 0 0 rgba(225,29,60,0.7); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 10px rgba(225,29,60,0); } 100% { box-shadow: 0 0 0 0 rgba(225,29,60,0); } }
+
+  /* ---- Table ---- */
+  .table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .table th {
+    text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dark-dim);
+    border-bottom: 1px solid var(--border-light); background: var(--bg-light);
+  }
+  .table td { padding: 14px 16px; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
+  .table tr:hover td { background: var(--bg-light); }
+  .table .num { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; }
+
+  /* ---- Athlete page ---- */
+  .athlete-hero {
+    background: var(--bg-dark); color: var(--text);
+    padding: 32px; display: flex; gap: 28px; align-items: flex-end;
+    position: relative; overflow: hidden;
+  }
+  .athlete-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(200,16,46,0.15) 0%, transparent 50%);
+  }
+  .athlete-photo {
+    width: 120px; height: 120px;
+    background: linear-gradient(135deg, var(--blue), var(--blue-hi));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 48px;
+    position: relative; z-index: 1;
+    clip-path: polygon(0 0, 100% 0, 100% 85%, 85% 100%, 0 100%);
+  }
+  .athlete-info { flex: 1; position: relative; z-index: 1; }
+  .athlete-info .tag { color: var(--red-hot); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .athlete-info h1 {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 54px;
+    text-transform: uppercase; line-height: 1; letter-spacing: 0.01em; margin: 6px 0 10px;
+  }
+  .athlete-meta { display: flex; gap: 32px; color: var(--text-dim); font-size: 13px; }
+  .athlete-meta b { color: var(--text); font-weight: 600; display: block; margin-top: 2px; font-size: 15px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border-light); margin-bottom: 24px; margin-top: 28px; }
+  .tab {
+    padding: 12px 20px; font-size: 13px; font-weight: 600; color: var(--text-dark-dim);
+    cursor: pointer; border-bottom: 2px solid transparent;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .tab.active { color: var(--red); border-bottom-color: var(--red); }
+
+  /* ---- Pie chart ---- */
+  .pie-wrap { display: flex; gap: 32px; align-items: center; padding: 12px 4px; }
+  .pie { width: 220px; height: 220px; }
+  .pie-legend { flex: 1; }
+  .legend-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border-light); }
+  .legend-row:last-child { border: none; }
+  .legend-dot { width: 12px; height: 12px; flex-shrink: 0; }
+  .legend-name { flex: 1; font-weight: 500; }
+  .legend-val { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; }
+
+  /* ---- Action bars (athlete stats) ---- */
+  .action-row { padding: 10px 0; border-bottom: 1px solid var(--border-light); }
+  .action-row:last-child { border: none; }
+  .action-head { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 6px; }
+  .action-head b { font-weight: 600; }
+  .action-bar { height: 8px; background: var(--bg-light); position: relative; overflow: hidden; }
+  .action-fill { height: 100%; background: var(--red); }
+
+  /* ================= LIVE MATCH ================= */
+  .live {
+    background: var(--bg-dark); color: var(--text); min-height: 100vh;
+    display: flex; flex-direction: column;
+  }
+  .live-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; border-bottom: 1px solid var(--border);
+  }
+  .live-topbar .left { display: flex; align-items: center; gap: 14px; }
+  .live-back { background: none; border: none; color: var(--text-dim); font-size: 14px; cursor: pointer; }
+  .live-back:hover { color: var(--text); }
+  .live-meta { font-size: 12px; color: var(--text-dim); }
+  .live-meta b { color: var(--text); }
+  .offline-badge {
+    display: none; padding: 6px 10px; background: var(--warn);
+    color: #000; font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .offline-badge.show { display: inline-flex; }
+
+  .live-stage { flex: 1; display: flex; position: relative; min-height: 0; }
+  .player-zone { flex: 1; padding: 32px 28px; display: flex; flex-direction: column; }
+  .player-zone.red { background: linear-gradient(135deg, rgba(200,16,46,0.08) 0%, transparent 60%); }
+  .player-zone.blue { background: linear-gradient(225deg, rgba(30,58,138,0.12) 0%, transparent 60%); text-align: right; }
+  .player-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  .player-zone.blue .player-header { flex-direction: row-reverse; }
+  .player-team-dot { width: 10px; height: 40px; background: var(--red); }
+  .player-zone.blue .player-team-dot { background: var(--blue-hi); }
+  .player-zone .player-name-big {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 40px;
+    text-transform: uppercase; line-height: 1; color: #fff;
+  }
+  .player-zone .player-team-lbl { font-size: 13px; color: #C7CDDC; letter-spacing: 0.14em; text-transform: uppercase; margin-top: 5px; font-weight: 600; }
+  .player-mini-stats {
+    display: flex; gap: 18px; margin-top: 14px; font-size: 11px;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .player-zone.blue .player-mini-stats { justify-content: flex-end; }
+  .player-mini-stats b { color: #fff; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.04em; display: block; margin-top: 2px; }
+  .score-big {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 96px;
+    line-height: 0.9; letter-spacing: -0.02em; margin: 12px 0 18px;
+  }
+  .score-big.red { color: var(--red-hot); }
+  .score-big.blue { color: var(--blue-hi); }
+
+  /* ===== NEW: Action list V2 (tactical observations) ===== */
+  .action-list-v2 {
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: auto; text-align: left;
+  }
+  .player-zone.blue .action-list-v2 { text-align: left; }
+  .action-row-v2 {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    overflow: hidden; transition: all 0.15s;
+  }
+  .action-row-v2.expanded { border-color: var(--text-dim); }
+  .action-row-v2.choice-yes { border-left: 4px solid #22C55E; }
+  .action-row-v2.choice-no  { border-left: 4px solid var(--red-hot); }
+  .player-zone.blue .action-row-v2.choice-yes { border-right: 4px solid #22C55E; border-left: 1px solid var(--border); }
+  .player-zone.blue .action-row-v2.choice-no  { border-right: 4px solid var(--red-hot); border-left: 1px solid var(--border); }
+
+  .arv2-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px; cursor: pointer; gap: 14px;
+    color: var(--text);
+  }
+  .arv2-head:hover { background: #242937; }
+  .arv2-label {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px;
+    text-transform: uppercase; letter-spacing: 0.05em; color: #fff; line-height: 1;
+    flex: 1;
+  }
+  .arv2-right { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .arv2-pct {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px;
+    color: var(--text-dim); letter-spacing: 0.04em; min-width: 48px; text-align: right;
+  }
+  .arv2-pct.yes { color: #4ADE80; }
+  .arv2-pct.no  { color: #FF6B7A; }
+  .arv2-chevron { font-size: 12px; color: var(--text-dim); transition: transform 0.2s; }
+  .action-row-v2.expanded .arv2-chevron { transform: rotate(180deg); color: #fff; }
+
+  .arv2-body {
+    display: none; padding: 0 18px 16px; border-top: 1px solid var(--border);
+    background: #0E1118;
+  }
+  .action-row-v2.expanded .arv2-body { display: block; }
+  .arv2-yn {
+    display: flex; gap: 8px; margin-top: 14px;
+  }
+  .arv2-yn-btn {
+    flex: 1; padding: 14px 12px; border: 1.5px solid var(--border); background: var(--bg-panel);
+    color: var(--text); cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.12s;
+  }
+  .arv2-yn-btn:hover { transform: translateY(-1px); }
+  .arv2-yn-btn.yes:hover, .arv2-yn-btn.yes.active {
+    background: #16A34A; border-color: #22C55E; color: #fff;
+  }
+  .arv2-yn-btn.no:hover, .arv2-yn-btn.no.active {
+    background: var(--red); border-color: var(--red-hot); color: #fff;
+  }
+  .arv2-yn-btn .ic { font-size: 14px; font-weight: 800; }
+  .arv2-counts {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px; font-size: 11px; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--text-dim); font-weight: 600;
+  }
+  .arv2-counts .c-yes { color: #4ADE80; }
+  .arv2-counts .c-no  { color: #FF6B7A; }
+  .arv2-counts b { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; }
+
+  .arv2-subs-block { margin-top: 12px; }
+  .arv2-subs-block:empty { display: none; }
+  .arv2-subs-lbl {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px;
+  }
+  .arv2-subs-lbl.yes { color: #4ADE80; }
+  .arv2-subs-lbl.no  { color: #FF6B7A; }
+  .arv2-subs {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .arv2-sub {
+    display: inline-flex; align-items: center;
+    padding: 6px 11px; font-size: 12px; font-weight: 600;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    color: #C7CDDC; letter-spacing: 0.03em;
+    pointer-events: none; /* solo visualizzazione */
+  }
+  .arv2-sub.yes { border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.08); color: #B7F2C8; }
+  .arv2-sub.no  { border-color: rgba(200,16,46,0.5); background: rgba(200,16,46,0.10); color: #FFC3CC; }
+  .arv2-sub.note {
+    font-style: italic; background: transparent; color: var(--text-dim);
+    border-style: dashed;
+  }
+
+  .live-center {
+    width: 220px; display: flex; flex-direction: column;
+    align-items: center; justify-content: space-between;
+    padding: 24px 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    background: #0A0C11;
+  }
+  .timer {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 44px;
+    letter-spacing: 0.05em; color: var(--text);
+  }
+  .timer-lbl { font-size: 10px; color: var(--text-dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px; }
+  .period-badge {
+    padding: 4px 10px; background: var(--bg-panel); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim);
+  }
+  .center-score {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 28px;
+    letter-spacing: 0.05em;
+  }
+  .center-score .sep { color: var(--text-dim); }
+  .undo-btn {
+    background: var(--bg-panel); border: 1px solid var(--border); color: var(--text);
+    padding: 16px 20px; font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+    font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .undo-btn:hover { background: var(--warn); color: #000; border-color: var(--warn); }
+  .ctrl-row { display: flex; gap: 8px; }
+  .ctrl-btn {
+    width: 44px; height: 44px; background: transparent; border: 1px solid var(--border);
+    color: var(--text-dim); cursor: pointer; font-size: 16px;
+  }
+  .ctrl-btn:hover { border-color: var(--text); color: var(--text); }
+
+  /* Action log ticker at the bottom of live */
+  .action-log {
+    display: flex; gap: 0; overflow-x: auto;
+    border-top: 1px solid var(--border); padding: 14px 18px;
+    font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 600;
+    background: #0A0C11; white-space: nowrap;
+  }
+  .action-log::before {
+    content: 'Timeline'; display: inline-flex; align-items: center;
+    padding: 6px 14px; background: var(--bg-panel); color: var(--text-dim);
+    font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+    margin-right: 14px; flex-shrink: 0;
+  }
+  .log-event {
+    padding: 6px 12px; border: 1px solid var(--border); margin-right: 6px;
+    display: inline-flex; align-items: center; gap: 8px;
+    letter-spacing: 0.05em; flex-shrink: 0;
+  }
+  .log-event.red { border-color: rgba(200,16,46,0.6); color: #FFC3CC; background: rgba(200,16,46,0.08); }
+  .log-event.blue { border-color: rgba(59,95,217,0.6); color: #B8C7EE; background: rgba(30,58,138,0.12); }
+  .log-event .t { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+
+  /* ========== MODAL ESITO ========== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    display: none; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--bg-panel); border: 1px solid var(--border);
+    padding: 28px; max-width: 480px; width: 90%;
+    border-top: 3px solid var(--red);
+  }
+  .modal h3 {
+    font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700;
+    text-transform: uppercase; margin-bottom: 6px;
+  }
+  .modal p { color: var(--text-dim); font-size: 13px; margin-bottom: 20px; }
+  .esito-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .esito-btn {
+    padding: 18px; background: var(--bg-panel-2); border: 1px solid var(--border);
+    color: var(--text); cursor: pointer; font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700; font-size: 16px; text-transform: uppercase; letter-spacing: 0.08em;
+    display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  }
+  .esito-btn:hover { background: var(--red); border-color: var(--red); }
+  .esito-btn small { font-size: 11px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.02em; text-transform: none; }
+  .esito-btn:hover small { color: rgba(255,255,255,0.7); }
+
+  /* ========== RECAP ========== */
+  .recap-hero {
+    background: linear-gradient(135deg, var(--bg-dark) 0%, #1a1f2e 100%);
+    color: var(--text); padding: 40px; margin-bottom: 28px;
+    display: flex; align-items: center; justify-content: center; gap: 40px;
+    position: relative; overflow: hidden;
+  }
+  .recap-hero::before, .recap-hero::after {
+    content: ''; position: absolute; top: -50%; width: 200px; height: 200%;
+    opacity: 0.05; transform: rotate(20deg);
+  }
+  .recap-hero::before { background: var(--red); left: -40px; }
+  .recap-hero::after { background: var(--blue-hi); right: -40px; }
+  .recap-player { text-align: center; position: relative; z-index: 1; }
+  .recap-player .rp-name {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .recap-player .rp-score {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 120px;
+    line-height: 1; margin-top: 6px;
+  }
+  .recap-player .rp-score.red { color: var(--red-hot); }
+  .recap-player .rp-score.blue { color: var(--blue-hi); }
+  .recap-player .rp-team { font-size: 12px; color: var(--text-dim); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 4px; }
+  .recap-vs { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 36px; color: var(--text-dim); letter-spacing: 0.1em; }
+  .winner-badge {
+    position: absolute; top: 16px; right: 20px;
+    padding: 6px 14px; background: var(--red); color: #fff;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 12px;
+    letter-spacing: 0.18em; text-transform: uppercase; z-index: 2;
+  }
+
+  .route { display: none; }
+  .route.active { display: block; }
+
+  /* ---- Team page ---- */
+  .team-hero {
+    background: linear-gradient(120deg, var(--bg-dark) 0%, #1E2638 60%, #1E3A8A 100%);
+    color: var(--text); padding: 36px 40px; display: flex; gap: 28px; align-items: center;
+    position: relative; overflow: hidden;
+  }
+  .team-hero::before {
+    content: ''; position: absolute; right: -60px; top: -60px;
+    width: 260px; height: 260px; border: 2px solid rgba(200,16,46,0.15);
+    transform: rotate(45deg);
+  }
+  .team-crest {
+    width: 110px; height: 110px;
+    background: linear-gradient(135deg, var(--red) 0%, var(--red-hot) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 46px; color: #fff;
+    clip-path: polygon(0 0, 100% 0, 100% 75%, 75% 100%, 0 100%);
+    flex-shrink: 0; position: relative; z-index: 1;
+  }
+  .team-info { flex: 1; position: relative; z-index: 1; }
+  .team-info .tag { color: var(--red-hot); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+  .team-info h1 {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 52px;
+    text-transform: uppercase; line-height: 1; letter-spacing: 0.01em; margin: 6px 0 10px;
+  }
+  .team-meta { display: flex; gap: 36px; color: var(--text-dim); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .team-meta b { color: var(--text); font-weight: 700; display: block; margin-top: 3px; font-size: 18px; font-family: 'Barlow Condensed', sans-serif; letter-spacing: 0.02em; }
+
+  .formation-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    margin-top: 10px;
+  }
+  .formation-slot {
+    background: var(--bg-light-2); border: 1px solid var(--border-light);
+    padding: 18px; position: relative; display: flex; gap: 14px; align-items: center;
+    transition: all 0.15s;
+  }
+  .formation-slot::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--red);
+  }
+  .formation-slot:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+  .formation-slot .slot-num {
+    position: absolute; top: 10px; right: 12px;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 24px;
+    color: var(--border-light); line-height: 1;
+  }
+  .formation-slot .photo {
+    width: 56px; height: 56px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--blue), var(--blue-hi));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px;
+    clip-path: polygon(0 0, 100% 0, 100% 80%, 80% 100%, 0 100%);
+  }
+  .formation-slot .slot-name {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px;
+    text-transform: uppercase; line-height: 1; letter-spacing: 0.02em;
+  }
+  .formation-slot .slot-stats {
+    display: flex; gap: 10px; margin-top: 6px; font-size: 11px; color: var(--text-dark-dim);
+    letter-spacing: 0.05em; text-transform: uppercase;
+  }
+  .formation-slot .slot-stats b { color: var(--text-dark); font-weight: 700; }
+  .formation-slot.empty {
+    border: 1.5px dashed var(--border-light); justify-content: center;
+    color: var(--text-dark-dim); font-weight: 600; font-size: 13px; cursor: pointer;
+    background: transparent;
+  }
+  .formation-slot.empty:hover { border-color: var(--red); color: var(--red); }
+  .formation-slot.empty::before { display: none; }
+
+  .roster-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .roster-card {
+    background: var(--bg-light-2); border: 1px solid var(--border-light);
+    padding: 16px; cursor: pointer; transition: all 0.15s; position: relative;
+  }
+  .roster-card:hover { border-color: var(--red); transform: translateY(-2px); }
+  .roster-card .photo {
+    width: 48px; height: 48px; background: linear-gradient(135deg, var(--blue), var(--blue-hi));
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px;
+    clip-path: polygon(0 0, 100% 0, 100% 80%, 80% 100%, 0 100%); margin-bottom: 10px;
+  }
+  .roster-card .rc-name {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 17px;
+    text-transform: uppercase; line-height: 1.1;
+  }
+  .roster-card .rc-meta { font-size: 11px; color: var(--text-dark-dim); margin-top: 4px; }
+  .roster-card .rc-kpi {
+    display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid var(--border-light); font-size: 11px; color: var(--text-dark-dim);
+  }
+  .roster-card .rc-kpi b { color: var(--text-dark); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; }
+  .roster-card .starter-flag {
+    position: absolute; top: 10px; right: 10px; font-size: 9px; font-weight: 700;
+    padding: 3px 7px; background: var(--red); color: #fff; letter-spacing: 0.1em;
+  }
+  @media (max-width: 1100px) {
+    .formation-grid { grid-template-columns: repeat(2, 1fr); }
+    .roster-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 780px) {
+    .roster-grid { grid-template-columns: repeat(2, 1fr); }
+    .formation-grid { grid-template-columns: 1fr; }
+    .team-hero { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* Tablet adjustments */
+  @media (max-width: 1100px) {
+    .sidebar { width: 72px; }
+    .brand-txt, .nav a span.lbl, .avatar-lbl { display: none; }
+    .nav a { justify-content: center; padding: 14px; }
+    .nav-section { display: none; }
+    .sidebar-footer { justify-content: center; }
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: 1fr 1fr; }
+    .search { width: 180px; }
+  }
+  @media (max-width: 780px) {
+    .live-center { width: 140px; }
+    .score-big { font-size: 96px; }
+    .action-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .athlete-hero { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .athlete-photo { width: 88px; height: 88px; font-size: 36px; }
+    .athlete-info h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== DASHBOARD / LISTA / ATLETA / RECAP ===================== -->
+<div class="app" id="app-chrome">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div class="brand-txt">Scher<span>ma</span></div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Analyst</div>
+      <a href="#/dashboard" data-route="dashboard" class="active"><span class="ico">◆</span><span class="lbl">Dashboard</span></a>
+      <a href="#/athlete" data-route="athlete"><span class="ico">●</span><span class="lbl">Atleti</span></a>
+      <a href="#/team" data-route="team"><span class="ico">▲</span><span class="lbl">Squadre</span></a>
+      <a href="#/recap" data-route="recap"><span class="ico">⬢</span><span class="lbl">Partite</span></a>
+      <div class="nav-section">Sistema</div>
+      <a href="#" onclick="return false;"><span class="ico">⚙</span><span class="lbl">Azioni</span></a>
+      <a href="#" onclick="return false;"><span class="ico">⬇</span><span class="lbl">Import Excel</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="avatar">MR</div>
+      <div class="avatar-lbl">
+        <b>Marco Rossi</b>
+        <span>Match analyst</span>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumbs" id="crumbs"><b>Dashboard</b></div>
+      <div class="topbar-actions">
+        <div class="search">🔍 Cerca atleta, squadra, partita…</div>
+        <a href="#/live" class="btn btn-primary">⚡ Nuova partita</a>
+      </div>
+    </div>
+
+    <!-- =============== DASHBOARD =============== -->
+    <section class="route active" id="route-dashboard">
+      <div class="content">
+        <div class="page-title">
+          <div>
+            <h1>Match Analyst</h1>
+            <div class="sub">Mercoledì 22 aprile 2026 · 3 assalti in programma oggi</div>
+          </div>
+          <a href="#/live" class="btn btn-primary btn-lg">⚡ Avvia assalto</a>
+        </div>
+
+        <div class="grid grid-4" style="margin-bottom: 28px;">
+          <div class="card">
+            <h3>Match totali</h3>
+            <div class="kpi-value">127</div>
+            <div class="kpi-delta">+12 questa settimana</div>
+          </div>
+          <div class="card accent-blue">
+            <h3>Atleti in db</h3>
+            <div class="kpi-value">58</div>
+            <div class="kpi-delta">+4 nuovi</div>
+          </div>
+          <div class="card">
+            <h3>Squadre</h3>
+            <div class="kpi-value">21</div>
+            <div class="kpi-delta">3 attive oggi</div>
+          </div>
+          <div class="card accent-blue">
+            <h3>Azioni registrate</h3>
+            <div class="kpi-value">3.842</div>
+            <div class="kpi-delta">+218 questa settimana</div>
+          </div>
+        </div>
+
+        <h2 class="cond" style="font-size: 20px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;">Match di oggi</h2>
+        <div class="grid grid-3" style="margin-bottom: 32px;">
+          <a href="#/live" class="match-hero" style="text-decoration: none;">
+            <span class="match-tag">◆ In corso</span>
+            <div class="match-players">
+              <div class="player">
+                <div class="player-name">Rossi L.</div>
+                <div class="player-sub">CS Esercito · M</div>
+              </div>
+              <div class="vs">VS</div>
+              <div class="player" style="text-align: right;">
+                <div class="player-name">Bianchi M.</div>
+                <div class="player-sub">Fiamme Oro · M</div>
+              </div>
+            </div>
+            <div class="match-meta">
+              <div>Arma<br><b>Fioretto</b></div>
+              <div>Formato<br><b>A 15</b></div>
+              <div>Punteggio<br><b>8–6</b></div>
+            </div>
+            <div class="match-cta">
+              <div class="match-status"><span class="dot live"></span> Riprendi live</div>
+              <span style="color: var(--red-hot); font-size: 12px; letter-spacing: 0.1em; font-weight: 700;">APRI →</span>
+            </div>
+          </a>
+
+          <div class="match-hero" style="opacity: 0.88;">
+            <span class="match-tag" style="color: var(--text-dim);">⌛ 14:30</span>
+            <div class="match-players">
+              <div class="player">
+                <div class="player-name">De Luca A.</div>
+                <div class="player-sub">Club Napoli · F</div>
+              </div>
+              <div class="vs">VS</div>
+              <div class="player" style="text-align: right;">
+                <div class="player-name">Ferri S.</div>
+                <div class="player-sub">Scherma Milano · F</div>
+              </div>
+            </div>
+            <div class="match-meta">
+              <div>Arma<br><b>Fioretto</b></div>
+              <div>Formato<br><b>A 15</b></div>
+              <div>Sede<br><b>PalaSport Roma</b></div>
+            </div>
+            <div class="match-cta">
+              <div class="match-status"><span class="dot" style="background: var(--text-dim);"></span> In programma</div>
+              <span style="color: var(--text-dim); font-size: 12px; letter-spacing: 0.1em;">APRI →</span>
+            </div>
+          </div>
+
+          <div class="match-hero" style="opacity: 0.88;">
+            <span class="match-tag" style="color: var(--text-dim);">⌛ 17:00</span>
+            <div class="match-players">
+              <div class="player">
+                <div class="player-name">Conti P.</div>
+                <div class="player-sub">CS Carabinieri · M</div>
+              </div>
+              <div class="vs">VS</div>
+              <div class="player" style="text-align: right;">
+                <div class="player-name">Marini G.</div>
+                <div class="player-sub">Fiamme Oro · M</div>
+              </div>
+            </div>
+            <div class="match-meta">
+              <div>Arma<br><b>Fioretto</b></div>
+              <div>Formato<br><b>A 15</b></div>
+              <div>Sede<br><b>PalaSport Roma</b></div>
+            </div>
+            <div class="match-cta">
+              <div class="match-status"><span class="dot" style="background: var(--text-dim);"></span> In programma</div>
+              <span style="color: var(--text-dim); font-size: 12px; letter-spacing: 0.1em;">APRI →</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card" style="padding: 0;">
+            <div style="padding: 20px 22px 12px;">
+              <h3 style="margin: 0;">Ultimi assalti</h3>
+            </div>
+            <table class="table">
+              <thead>
+                <tr><th>Data</th><th>Atleti</th><th>Arma</th><th>Risultato</th><th></th></tr>
+              </thead>
+              <tbody>
+                <tr><td>21 apr</td><td><b>Rossi L.</b> vs Moretti D.</td><td>Fioretto</td><td><span class="num" style="color: var(--ok);">15–11</span></td><td><a href="#/recap" style="color: var(--red); font-size: 12px; font-weight: 700;">APRI</a></td></tr>
+                <tr><td>20 apr</td><td><b>Bianchi M.</b> vs Esposito F.</td><td>Fioretto</td><td><span class="num" style="color: var(--danger);">12–15</span></td><td><a href="#/recap" style="color: var(--red); font-size: 12px; font-weight: 700;">APRI</a></td></tr>
+                <tr><td>20 apr</td><td><b>De Luca A.</b> vs Russo C.</td><td>Fioretto</td><td><span class="num" style="color: var(--ok);">15–8</span></td><td><a href="#/recap" style="color: var(--red); font-size: 12px; font-weight: 700;">APRI</a></td></tr>
+                <tr><td>19 apr</td><td><b>Rossi L.</b> vs Conti P.</td><td>Fioretto</td><td><span class="num" style="color: var(--ok);">15–13</span></td><td><a href="#/recap" style="color: var(--red); font-size: 12px; font-weight: 700;">APRI</a></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h3>Top atleti per azioni a segno</h3>
+            <div style="margin-top: 14px;">
+              <div class="action-row" style="border-color: var(--border-light);">
+                <div class="action-head"><b>Rossi Luca</b><span>82% · CS Esercito</span></div>
+                <div class="action-bar"><div class="action-fill" style="width: 82%;"></div></div>
+              </div>
+              <div class="action-row" style="border-color: var(--border-light);">
+                <div class="action-head"><b>De Luca Alice</b><span>78% · Club Napoli</span></div>
+                <div class="action-bar"><div class="action-fill" style="width: 78%; background: var(--blue-hi);"></div></div>
+              </div>
+              <div class="action-row" style="border-color: var(--border-light);">
+                <div class="action-head"><b>Conti Paolo</b><span>74% · CS Carabinieri</span></div>
+                <div class="action-bar"><div class="action-fill" style="width: 74%;"></div></div>
+              </div>
+              <div class="action-row" style="border-color: var(--border-light);">
+                <div class="action-head"><b>Bianchi Matteo</b><span>68% · Fiamme Oro</span></div>
+                <div class="action-bar"><div class="action-fill" style="width: 68%; background: var(--blue-hi);"></div></div>
+              </div>
+              <div class="action-row" style="border: none;">
+                <div class="action-head"><b>Ferri Sofia</b><span>65% · Scherma Milano</span></div>
+                <div class="action-bar"><div class="action-fill" style="width: 65%; background: var(--blue-hi);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== PAGINA ATLETA =============== -->
+    <section class="route" id="route-athlete">
+      <div class="athlete-hero">
+        <div class="athlete-photo">LR</div>
+        <div class="athlete-info">
+          <div class="tag">◆ Atleta · Fioretto</div>
+          <h1>Rossi Luca</h1>
+          <div class="athlete-meta">
+            <div>Squadra<b>CS Esercito</b></div>
+            <div>Categoria<b>Senior · M</b></div>
+            <div>Mano<b>Destra</b></div>
+            <div>Match<b>24</b></div>
+            <div>Win rate<b style="color: var(--ok);">67%</b></div>
+          </div>
+        </div>
+        <div style="position: relative; z-index: 1;">
+          <a href="#/live" class="btn btn-primary btn-lg">⚡ Nuova partita</a>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="tabs">
+          <div class="tab active">Statistiche</div>
+          <div class="tab">Profilo</div>
+          <div class="tab">Storico match (24)</div>
+          <div class="tab">Note analyst</div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Distribuzione azioni principali</h3>
+            <div class="pie-wrap">
+              <svg class="pie" viewBox="0 0 100 100">
+                <!-- donut segments computed below -->
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1F2330" stroke-width="14" opacity="0.08"/>
+                <!-- segments -->
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#C8102E" stroke-width="14" stroke-dasharray="68 196" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1E3A8A" stroke-width="14" stroke-dasharray="54 196" stroke-dashoffset="-68" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#3B5FD9" stroke-width="14" stroke-dasharray="42 196" stroke-dashoffset="-122" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#F59E0B" stroke-width="14" stroke-dasharray="30 196" stroke-dashoffset="-164" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#10B981" stroke-width="14" stroke-dasharray="20 196" stroke-dashoffset="-194" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#8A91A3" stroke-width="14" stroke-dasharray="10 196" stroke-dashoffset="-214" transform="rotate(-90 50 50)"/>
+                <text x="50" y="48" text-anchor="middle" font-family="Barlow Condensed" font-weight="800" font-size="20" fill="#1F2330">224</text>
+                <text x="50" y="60" text-anchor="middle" font-family="Inter" font-size="6" fill="#5A6070">AZIONI</text>
+              </svg>
+              <div class="pie-legend">
+                <div class="legend-row"><div class="legend-dot" style="background:#C8102E"></div><div class="legend-name">Tocca</div><div class="legend-val">31%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#1E3A8A"></div><div class="legend-name">Parata</div><div class="legend-val">24%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#3B5FD9"></div><div class="legend-name">Risposta</div><div class="legend-val">19%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#F59E0B"></div><div class="legend-name">Contrattacco</div><div class="legend-val">14%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#10B981"></div><div class="legend-name">Messa in azione</div><div class="legend-val">9%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#8A91A3"></div><div class="legend-name">Non tocca</div><div class="legend-val">3%</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card accent-blue">
+            <h3>Efficacia per azione</h3>
+            <div style="margin-top: 10px;">
+              <div class="action-row">
+                <div class="action-head"><b>Parata · risposta</b><span>87% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:87%; background: var(--blue-hi);"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Tocca in attacco</b><span>74% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:74%;"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Contrattacco</b><span>52% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:52%; background: var(--warn);"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Messa in azione</b><span>61% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:61%; background: var(--warn);"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Non tocca (tentativo a vuoto)</b><span>—</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:12%; background: var(--danger);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-2" style="margin-top: 20px;">
+          <div class="card">
+            <h3>Trend ultime 10 partite</h3>
+            <svg viewBox="0 0 400 140" style="width:100%; height:140px; margin-top: 16px;">
+              <polyline points="10,100 50,80 90,90 130,60 170,70 210,40 250,50 290,30 330,45 380,20" fill="none" stroke="#C8102E" stroke-width="2.5"/>
+              <g font-family="JetBrains Mono" font-size="9" fill="#5A6070">
+                <text x="10" y="130">M-9</text><text x="130" y="130">M-5</text><text x="290" y="130">M-1</text>
+              </g>
+              <line x1="0" y1="115" x2="400" y2="115" stroke="#E3E5EC" stroke-width="1"/>
+            </svg>
+            <p style="font-size: 12px; color: var(--text-dark-dim); margin-top: 10px;">Percentuale di stoccate a segno per match — trend in miglioramento (+22% negli ultimi 10 assalti).</p>
+          </div>
+
+          <div class="card accent-blue">
+            <h3>Ultimi avversari</h3>
+            <table class="table" style="margin-top: 6px;">
+              <tbody>
+                <tr><td><b>Moretti D.</b></td><td>21/04</td><td style="color: var(--ok);"><b>15–11</b></td></tr>
+                <tr><td><b>Conti P.</b></td><td>19/04</td><td style="color: var(--ok);"><b>15–13</b></td></tr>
+                <tr><td><b>Marini G.</b></td><td>15/04</td><td style="color: var(--danger);"><b>12–15</b></td></tr>
+                <tr><td><b>Esposito F.</b></td><td>12/04</td><td style="color: var(--ok);"><b>15–9</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== PAGINA SQUADRA =============== -->
+    <section class="route" id="route-team">
+      <div class="team-hero">
+        <div class="team-crest">CSE</div>
+        <div class="team-info">
+          <div class="tag">▲ Squadra · Fioretto Maschile</div>
+          <h1>CS Esercito</h1>
+          <div class="team-meta">
+            <div>Categoria<b>Senior · M</b></div>
+            <div>Rosa<b>9 atleti</b></div>
+            <div>Formazione<b>6 / 6 schierati</b></div>
+            <div>Match stagione<b>18</b></div>
+            <div>Win rate<b style="color: #B8F0C9;">72%</b></div>
+          </div>
+        </div>
+        <div style="position: relative; z-index: 1;">
+          <a href="#/live" class="btn btn-primary btn-lg">⚡ Nuovo assalto</a>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="tabs">
+          <div class="tab active">Formazione schierata</div>
+          <div class="tab">Rosa completa (9)</div>
+          <div class="tab">Statistiche aggregate</div>
+          <div class="tab">Storico match (18)</div>
+        </div>
+
+        <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 14px;">
+          <div>
+            <h2 class="cond" style="font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">Sei tiratori schierati</h2>
+            <p style="font-size: 13px; color: var(--text-dark-dim); margin-top: 4px;">La formazione può essere modificata tra un match e l'altro. Le statistiche di squadra sono la somma dei sei tiratori schierati.</p>
+          </div>
+          <button class="btn btn-ghost">✎ Modifica formazione</button>
+        </div>
+
+        <div class="formation-grid" style="margin-bottom: 32px;">
+          <div class="formation-slot">
+            <div class="slot-num">1</div>
+            <div class="photo">LR</div>
+            <div>
+              <div class="slot-name">Rossi Luca</div>
+              <div class="slot-stats"><div>Match<b>24</b></div><div>Win<b>67%</b></div><div>A segno<b>74%</b></div></div>
+            </div>
+          </div>
+          <div class="formation-slot">
+            <div class="slot-num">2</div>
+            <div class="photo" style="background: linear-gradient(135deg, #7B3FF2, var(--blue-hi));">PC</div>
+            <div>
+              <div class="slot-name">Conti Paolo</div>
+              <div class="slot-stats"><div>Match<b>19</b></div><div>Win<b>58%</b></div><div>A segno<b>69%</b></div></div>
+            </div>
+          </div>
+          <div class="formation-slot">
+            <div class="slot-num">3</div>
+            <div class="photo" style="background: linear-gradient(135deg, #C8102E, #E11D3C);">AM</div>
+            <div>
+              <div class="slot-name">Moretti Alessio</div>
+              <div class="slot-stats"><div>Match<b>15</b></div><div>Win<b>53%</b></div><div>A segno<b>64%</b></div></div>
+            </div>
+          </div>
+          <div class="formation-slot">
+            <div class="slot-num">4</div>
+            <div class="photo" style="background: linear-gradient(135deg, #10B981, #059669);">FE</div>
+            <div>
+              <div class="slot-name">Esposito Fabio</div>
+              <div class="slot-stats"><div>Match<b>12</b></div><div>Win<b>50%</b></div><div>A segno<b>61%</b></div></div>
+            </div>
+          </div>
+          <div class="formation-slot">
+            <div class="slot-num">5</div>
+            <div class="photo" style="background: linear-gradient(135deg, #F59E0B, #D97706);">DG</div>
+            <div>
+              <div class="slot-name">Greco Davide</div>
+              <div class="slot-stats"><div>Match<b>11</b></div><div>Win<b>55%</b></div><div>A segno<b>63%</b></div></div>
+            </div>
+          </div>
+          <div class="formation-slot">
+            <div class="slot-num">6</div>
+            <div class="photo" style="background: linear-gradient(135deg, #1E3A8A, #3B5FD9);">NB</div>
+            <div>
+              <div class="slot-name">Bruno Nicola</div>
+              <div class="slot-stats"><div>Match<b>8</b></div><div>Win<b>62%</b></div><div>A segno<b>71%</b></div></div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="cond" style="font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;">Rosa completa</h2>
+        <div class="roster-grid" style="margin-bottom: 32px;">
+          <div class="roster-card">
+            <span class="starter-flag">TITOLARE</span>
+            <div class="photo">LR</div>
+            <div class="rc-name">Rossi Luca</div>
+            <div class="rc-meta">Senior · Destra</div>
+            <div class="rc-kpi"><span>Match <b>24</b></span><span>Win <b>67%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <span class="starter-flag">TITOLARE</span>
+            <div class="photo" style="background: linear-gradient(135deg, #7B3FF2, var(--blue-hi));">PC</div>
+            <div class="rc-name">Conti Paolo</div>
+            <div class="rc-meta">Senior · Destra</div>
+            <div class="rc-kpi"><span>Match <b>19</b></span><span>Win <b>58%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <span class="starter-flag">TITOLARE</span>
+            <div class="photo" style="background: linear-gradient(135deg, #C8102E, #E11D3C);">AM</div>
+            <div class="rc-name">Moretti Alessio</div>
+            <div class="rc-meta">Senior · Sinistra</div>
+            <div class="rc-kpi"><span>Match <b>15</b></span><span>Win <b>53%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <span class="starter-flag">TITOLARE</span>
+            <div class="photo" style="background: linear-gradient(135deg, #10B981, #059669);">FE</div>
+            <div class="rc-name">Esposito Fabio</div>
+            <div class="rc-meta">Senior · Destra</div>
+            <div class="rc-kpi"><span>Match <b>12</b></span><span>Win <b>50%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <span class="starter-flag">TITOLARE</span>
+            <div class="photo" style="background: linear-gradient(135deg, #F59E0B, #D97706);">DG</div>
+            <div class="rc-name">Greco Davide</div>
+            <div class="rc-meta">U23 · Destra</div>
+            <div class="rc-kpi"><span>Match <b>11</b></span><span>Win <b>55%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <span class="starter-flag">TITOLARE</span>
+            <div class="photo" style="background: linear-gradient(135deg, #1E3A8A, #3B5FD9);">NB</div>
+            <div class="rc-name">Bruno Nicola</div>
+            <div class="rc-meta">U23 · Destra</div>
+            <div class="rc-kpi"><span>Match <b>8</b></span><span>Win <b>62%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <div class="photo" style="background: linear-gradient(135deg, #6B7280, #4B5563);">MC</div>
+            <div class="rc-name">Colombo Matteo</div>
+            <div class="rc-meta">U23 · Destra · Riserva</div>
+            <div class="rc-kpi"><span>Match <b>5</b></span><span>Win <b>40%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <div class="photo" style="background: linear-gradient(135deg, #EC4899, #DB2777);">SG</div>
+            <div class="rc-name">Gallo Simone</div>
+            <div class="rc-meta">U20 · Sinistra · Riserva</div>
+            <div class="rc-kpi"><span>Match <b>3</b></span><span>Win <b>33%</b></span></div>
+          </div>
+          <div class="roster-card">
+            <div class="photo" style="background: linear-gradient(135deg, #14B8A6, #0D9488);">RL</div>
+            <div class="rc-name">Longo Riccardo</div>
+            <div class="rc-meta">U20 · Destra · Riserva</div>
+            <div class="rc-kpi"><span>Match <b>2</b></span><span>Win <b>50%</b></span></div>
+          </div>
+        </div>
+
+        <h2 class="cond" style="font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px;">Statistiche di squadra</h2>
+        <p style="font-size: 13px; color: var(--text-dark-dim); margin-bottom: 18px;">Aggregate della formazione schierata (6 tiratori) su tutti gli assalti della stagione.</p>
+
+        <div class="grid grid-2" style="margin-bottom: 24px;">
+          <div class="card">
+            <h3>Distribuzione azioni squadra</h3>
+            <div class="pie-wrap">
+              <svg class="pie" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#C8102E" stroke-width="14" stroke-dasharray="74 196" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1E3A8A" stroke-width="14" stroke-dasharray="52 196" stroke-dashoffset="-74" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#3B5FD9" stroke-width="14" stroke-dasharray="40 196" stroke-dashoffset="-126" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#F59E0B" stroke-width="14" stroke-dasharray="18 196" stroke-dashoffset="-166" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#10B981" stroke-width="14" stroke-dasharray="12 196" stroke-dashoffset="-184" transform="rotate(-90 50 50)"/>
+                <text x="50" y="48" text-anchor="middle" font-family="Barlow Condensed" font-weight="800" font-size="20" fill="#1F2330">1.284</text>
+                <text x="50" y="60" text-anchor="middle" font-family="Inter" font-size="6" fill="#5A6070">AZIONI</text>
+              </svg>
+              <div class="pie-legend">
+                <div class="legend-row"><div class="legend-dot" style="background:#C8102E"></div><div class="legend-name">Tocca</div><div class="legend-val">38%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#1E3A8A"></div><div class="legend-name">Parata</div><div class="legend-val">26%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#3B5FD9"></div><div class="legend-name">Risposta</div><div class="legend-val">20%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#F59E0B"></div><div class="legend-name">Contrattacco</div><div class="legend-val">9%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#10B981"></div><div class="legend-name">Messa in azione</div><div class="legend-val">7%</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card accent-blue">
+            <h3>Efficacia azioni (formazione)</h3>
+            <div style="margin-top: 10px;">
+              <div class="action-row">
+                <div class="action-head"><b>Parata · risposta</b><span>81% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:81%; background: var(--blue-hi);"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Tocca in attacco</b><span>71% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:71%;"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Contrattacco</b><span>58% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:58%; background: var(--warn);"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Messa in azione</b><span>64% riuscita</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:64%; background: var(--warn);"></div></div>
+              </div>
+              <div class="action-row">
+                <div class="action-head"><b>Non tocca</b><span>media squadra</span></div>
+                <div class="action-bar"><div class="action-fill" style="width:14%; background: var(--danger);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Contributo dei 6 tiratori</h3>
+          <table class="table" style="margin-top: 10px;">
+            <thead>
+              <tr><th>Tiratore</th><th>Match</th><th>Azioni</th><th>A segno</th><th>Efficacia parata</th><th>Efficacia tocca</th><th>Win</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><b>Rossi Luca</b></td><td>24</td><td class="num">224</td><td class="num" style="color: var(--ok);">74%</td><td class="num">87%</td><td class="num">74%</td><td class="num" style="color: var(--ok);">67%</td></tr>
+              <tr><td><b>Conti Paolo</b></td><td>19</td><td class="num">196</td><td class="num" style="color: var(--ok);">69%</td><td class="num">78%</td><td class="num">69%</td><td class="num">58%</td></tr>
+              <tr><td><b>Moretti Alessio</b></td><td>15</td><td class="num">168</td><td class="num">64%</td><td class="num">72%</td><td class="num">64%</td><td class="num">53%</td></tr>
+              <tr><td><b>Esposito Fabio</b></td><td>12</td><td class="num">140</td><td class="num">61%</td><td class="num">69%</td><td class="num">61%</td><td class="num">50%</td></tr>
+              <tr><td><b>Greco Davide</b></td><td>11</td><td class="num">128</td><td class="num">63%</td><td class="num">74%</td><td class="num">63%</td><td class="num">55%</td></tr>
+              <tr><td><b>Bruno Nicola</b></td><td>8</td><td class="num">96</td><td class="num" style="color: var(--ok);">71%</td><td class="num">80%</td><td class="num">71%</td><td class="num" style="color: var(--ok);">62%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============== RECAP MATCH =============== -->
+    <section class="route" id="route-recap">
+      <div class="content" style="padding-top: 32px;">
+        <div class="recap-hero">
+          <div class="winner-badge">Vincitore: Rossi L.</div>
+          <div class="recap-player">
+            <div class="rp-name">Rossi Luca</div>
+            <div class="rp-score red">15</div>
+            <div class="rp-team">CS Esercito</div>
+          </div>
+          <div class="recap-vs">VS</div>
+          <div class="recap-player">
+            <div class="rp-name">Bianchi Matteo</div>
+            <div class="rp-score blue">11</div>
+            <div class="rp-team">Fiamme Oro</div>
+          </div>
+        </div>
+
+        <div class="grid grid-3" style="margin-bottom: 20px;">
+          <div class="card"><h3>Durata</h3><div class="kpi-value">08:42</div><div class="kpi-delta" style="color: var(--text-dark-dim);">3 periodi</div></div>
+          <div class="card accent-blue"><h3>Azioni totali</h3><div class="kpi-value">38</div><div class="kpi-delta" style="color: var(--text-dark-dim);">22 Rossi · 16 Bianchi</div></div>
+          <div class="card"><h3>Data · luogo</h3><div style="font-family: 'Barlow Condensed'; font-weight: 700; font-size: 24px; margin-top: 4px;">21 APR 2026</div><div class="kpi-delta" style="color: var(--text-dark-dim);">PalaSport Roma</div></div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>Rossi Luca — distribuzione azioni</h3>
+            <div class="pie-wrap">
+              <svg class="pie" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#C8102E" stroke-width="14" stroke-dasharray="80 196" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1E3A8A" stroke-width="14" stroke-dasharray="55 196" stroke-dashoffset="-80" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#3B5FD9" stroke-width="14" stroke-dasharray="38 196" stroke-dashoffset="-135" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#F59E0B" stroke-width="14" stroke-dasharray="23 196" stroke-dashoffset="-173" transform="rotate(-90 50 50)"/>
+                <text x="50" y="48" text-anchor="middle" font-family="Barlow Condensed" font-weight="800" font-size="20" fill="#1F2330">22</text>
+                <text x="50" y="60" text-anchor="middle" font-family="Inter" font-size="6" fill="#5A6070">AZIONI</text>
+              </svg>
+              <div class="pie-legend">
+                <div class="legend-row"><div class="legend-dot" style="background:#C8102E"></div><div class="legend-name">Tocca</div><div class="legend-val">41%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#1E3A8A"></div><div class="legend-name">Parata</div><div class="legend-val">28%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#3B5FD9"></div><div class="legend-name">Risposta</div><div class="legend-val">19%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#F59E0B"></div><div class="legend-name">Contrattacco</div><div class="legend-val">12%</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card accent-blue">
+            <h3>Bianchi Matteo — distribuzione azioni</h3>
+            <div class="pie-wrap">
+              <svg class="pie" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#1E3A8A" stroke-width="14" stroke-dasharray="48 196" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#C8102E" stroke-width="14" stroke-dasharray="42 196" stroke-dashoffset="-48" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#3B5FD9" stroke-width="14" stroke-dasharray="36 196" stroke-dashoffset="-90" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#F59E0B" stroke-width="14" stroke-dasharray="30 196" stroke-dashoffset="-126" transform="rotate(-90 50 50)"/>
+                <circle cx="50" cy="50" r="42" fill="none" stroke="#10B981" stroke-width="14" stroke-dasharray="20 196" stroke-dashoffset="-156" transform="rotate(-90 50 50)"/>
+                <text x="50" y="48" text-anchor="middle" font-family="Barlow Condensed" font-weight="800" font-size="20" fill="#1F2330">16</text>
+                <text x="50" y="60" text-anchor="middle" font-family="Inter" font-size="6" fill="#5A6070">AZIONI</text>
+              </svg>
+              <div class="pie-legend">
+                <div class="legend-row"><div class="legend-dot" style="background:#1E3A8A"></div><div class="legend-name">Parata</div><div class="legend-val">30%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#C8102E"></div><div class="legend-name">Tocca</div><div class="legend-val">26%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#3B5FD9"></div><div class="legend-name">Risposta</div><div class="legend-val">22%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#F59E0B"></div><div class="legend-name">Contrattacco</div><div class="legend-val">14%</div></div>
+                <div class="legend-row"><div class="legend-dot" style="background:#10B981"></div><div class="legend-name">Messa in azione</div><div class="legend-val">8%</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+          <h3>Timeline azioni</h3>
+          <div style="display:flex; flex-wrap: wrap; gap: 6px; padding-top: 10px;">
+            <span class="log-event red" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">01:14</span>Tocca · Rossi</span>
+            <span class="log-event blue" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">01:42</span>Parata · Bianchi</span>
+            <span class="log-event blue" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">01:43</span>Risposta · Bianchi</span>
+            <span class="log-event red" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">02:28</span>Contrattacco · Rossi</span>
+            <span class="log-event red" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">02:51</span>Tocca · Rossi</span>
+            <span class="log-event blue" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">03:19</span>Tocca · Bianchi</span>
+            <span class="log-event red" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">04:05</span>Parata-risposta · Rossi</span>
+            <span class="log-event red" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">04:33</span>Tocca · Rossi</span>
+            <span class="log-event blue" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">05:11</span>Contrattacco · Bianchi</span>
+            <span class="log-event red" style="background: var(--bg-light); color: var(--text-dark);"><span class="t">05:48</span>Tocca · Rossi</span>
+            <span style="padding: 4px 10px; color: var(--text-dark-dim); font-size: 12px;">…+28 azioni</span>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button class="btn btn-primary">💾 Salva e chiudi</button>
+          <button class="btn btn-ghost" disabled style="opacity: 0.5; cursor: not-allowed;">📄 Esporta report (presto)</button>
+          <button class="btn btn-ghost">✎ Aggiungi note</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ===================== LIVE MATCH (full screen) ===================== -->
+<div class="live route" id="route-live">
+  <div class="live-topbar">
+    <div class="left">
+      <button class="live-back" onclick="go('dashboard')">← Torna</button>
+      <div class="live-meta">Fioretto · A 15 · <b>PalaSport Roma</b></div>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <span class="offline-badge" id="offlineBadge">◉ Offline — dati salvati localmente</span>
+      <span style="font-family: 'Barlow Condensed'; font-weight: 700; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--red-hot);">◆ LIVE</span>
+    </div>
+  </div>
+
+  <div class="live-stage">
+
+    <!-- LEFT ATHLETE -->
+    <div class="player-zone red">
+      <div class="player-header">
+        <div class="player-team-dot"></div>
+        <div>
+          <div class="player-name-big">Rossi Luca</div>
+          <div class="player-team-lbl">CS Esercito</div>
+        </div>
+      </div>
+      <div class="player-mini-stats">
+        <div>Azioni<b id="totalA">12</b></div>
+        <div>Successo medio<b id="avgA">67%</b></div>
+      </div>
+      <div class="score-big red" id="scoreA">8</div>
+
+      <div class="action-list-v2" id="actionsA"></div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="live-center">
+      <div style="text-align: center;">
+        <div class="period-badge">Periodo 2 / 3</div>
+        <div class="timer-lbl" style="margin-top: 16px;">Tempo</div>
+        <div class="timer" id="timer">02:14</div>
+      </div>
+
+      <div style="text-align: center;">
+        <div class="timer-lbl">Punteggio</div>
+        <div class="center-score">
+          <span style="color: var(--red-hot);" id="scoreA2">8</span>
+          <span class="sep"> — </span>
+          <span style="color: var(--blue-hi);" id="scoreB2">6</span>
+        </div>
+      </div>
+
+      <div style="width: 100%; padding: 0 16px; display: flex; flex-direction: column; gap: 12px;">
+        <button class="undo-btn" onclick="undoAction()"><span>↶</span> Annulla ultima</button>
+        <div class="ctrl-row" style="justify-content: center;">
+          <button class="ctrl-btn" onclick="toggleOffline()" title="Simula offline">⚡</button>
+          <button class="ctrl-btn" title="Pausa">⏸</button>
+          <button class="ctrl-btn" title="Nota">✎</button>
+          <button class="ctrl-btn" title="Fine match" onclick="go('recap')">⏹</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT ATHLETE -->
+    <div class="player-zone blue">
+      <div class="player-header">
+        <div class="player-team-dot"></div>
+        <div>
+          <div class="player-name-big">Bianchi Matteo</div>
+          <div class="player-team-lbl">Fiamme Oro</div>
+        </div>
+      </div>
+      <div class="player-mini-stats">
+        <div>Azioni<b id="totalB">9</b></div>
+        <div>Successo medio<b id="avgB">67%</b></div>
+      </div>
+      <div class="score-big blue" id="scoreB">6</div>
+
+      <div class="action-list-v2" id="actionsB"></div>
+    </div>
+
+  </div>
+
+  <!-- Action log ticker -->
+  <div class="action-log" id="actionLog">
+    <span class="log-event red"><span class="t">02:05</span><span style="color:#4ADE80; font-weight:800;">✓</span> Attacco lungo · Rossi</span>
+    <span class="log-event blue"><span class="t">01:48</span><span style="color:#FF6B7A; font-weight:800;">✕</span> Difesa di misura · Bianchi</span>
+    <span class="log-event red"><span class="t">01:32</span><span style="color:#4ADE80; font-weight:800;">✓</span> Attacco buca prep. · Rossi</span>
+    <span class="log-event blue"><span class="t">01:11</span><span style="color:#4ADE80; font-weight:800;">✓</span> Difesa · Bianchi</span>
+    <span class="log-event red"><span class="t">00:54</span><span style="color:#FF6B7A; font-weight:800;">✕</span> Difesa · Rossi</span>
+    <span class="log-event red"><span class="t">00:38</span><span style="color:#4ADE80; font-weight:800;">✓</span> Attacco lungo · Rossi</span>
+  </div>
+</div>
+
+<!-- Modal esito rimosso: il nuovo modello usa Sì/No inline nelle righe azione -->
+
+<script>
+  /* ------------ Router ------------ */
+  const routes = ['dashboard','athlete','team','live','recap'];
+  function go(route) {
+    location.hash = '#/' + route;
+    render();
+  }
+  function render() {
+    const r = (location.hash.replace('#/','') || 'dashboard');
+    const isLive = r === 'live';
+
+    document.getElementById('app-chrome').style.display = isLive ? 'none' : 'flex';
+    document.getElementById('route-live').style.display = isLive ? 'flex' : 'none';
+
+    routes.forEach(rt => {
+      const el = document.getElementById('route-' + rt);
+      if (el) el.classList.toggle('active', rt === r);
+    });
+
+    document.querySelectorAll('.nav a[data-route]').forEach(a => {
+      a.classList.toggle('active', a.dataset.route === r);
+    });
+
+    const crumbs = document.getElementById('crumbs');
+    if (crumbs) {
+      const labels = { dashboard: 'Dashboard', athlete: 'Atleti › Rossi Luca', team: 'Squadre › CS Esercito', recap: 'Partite › Rossi vs Bianchi · 21 apr' };
+      crumbs.innerHTML = '<b>' + (labels[r] || 'Dashboard') + '</b>';
+    }
+  }
+  window.addEventListener('hashchange', render);
+  render();
+
+  /* ============ Live interactions V2 ============ */
+  // Catalogo azioni tattiche (sezioni 3-4 della spec cliente)
+  const ACTION_CATALOG = [
+    {
+      id: 'attacco-lungo',
+      label: 'Attacco lungo',
+      subYes: [],
+      subNo: ['Corto', 'Parata', 'Controattacco'],
+    },
+    {
+      id: 'attacco-buca',
+      label: 'Attacco buca preparazione',
+      subYes: ['Uguale', 'Lo ↗'],
+      subNo: ['Corto', 'Parata', 'Controattacco'],
+    },
+    {
+      id: 'difesa-misura-centro',
+      label: 'Difesa di misura al centro',
+      subYes: [],
+      subNo: [], // da definire
+      noPlaceholder: 'Da definire',
+    },
+    {
+      id: 'difesa',
+      label: 'Difesa',
+      subYes: [],
+      subNo: ['Difesa di misura', 'Parata', 'Controattacco'],
+    },
+    {
+      id: 'attacco-diretto-centro',
+      label: 'Attacco diretto al centro',
+      subYes: ['Parata', 'Controattacco', 'Difesa di misura'],
+      subNo: ['Parata', 'Controattacco', 'Difesa di misura'],
+      equalWeights: true,
+    },
+  ];
+
+  let scoreA = 8, scoreB = 6;
+  const eventsStack = [];
+
+  // Stato osservazioni per atleta: { [side]: { [actionId]: { yes, no, choice, expanded } } }
+  const observations = { A: {}, B: {} };
+  ['A','B'].forEach(side => {
+    ACTION_CATALOG.forEach(act => {
+      observations[side][act.id] = { yes: 0, no: 0, choice: null, expanded: false };
+    });
+  });
+  // Pre-popolo con dati di esempio realistici per la demo
+  observations.A['attacco-lungo']         = { yes: 4, no: 2, choice: 'yes', expanded: true };
+  observations.A['attacco-buca']          = { yes: 3, no: 1, choice: 'yes', expanded: false };
+  observations.A['difesa']                = { yes: 2, no: 1, choice: 'no',  expanded: false };
+  observations.B['difesa-misura-centro']  = { yes: 1, no: 3, choice: 'no',  expanded: true };
+  observations.B['attacco-lungo']         = { yes: 2, no: 3, choice: 'no',  expanded: false };
+
+  function updateScores() {
+    document.getElementById('scoreA').textContent = scoreA;
+    document.getElementById('scoreA2').textContent = scoreA;
+    document.getElementById('scoreB').textContent = scoreB;
+    document.getElementById('scoreB2').textContent = scoreB;
+  }
+
+  function renderActions() {
+    ['A','B'].forEach(side => {
+      const container = document.getElementById('actions' + side);
+      if (!container) return;
+      container.innerHTML = '';
+      let totalActions = 0;
+      ACTION_CATALOG.forEach(act => {
+        const state = observations[side][act.id];
+        const total = state.yes + state.no;
+        totalActions += total;
+        const pct = total > 0 ? Math.round(state.yes / total * 100) : null;
+
+        const row = document.createElement('div');
+        row.className = 'action-row-v2'
+          + (state.expanded ? ' expanded' : '')
+          + (state.choice === 'yes' ? ' choice-yes' : state.choice === 'no' ? ' choice-no' : '');
+
+        const head = document.createElement('div');
+        head.className = 'arv2-head';
+        head.onclick = () => { state.expanded = !state.expanded; renderActions(); };
+
+        const labelEl = document.createElement('div');
+        labelEl.className = 'arv2-label';
+        labelEl.textContent = act.label;
+
+        const right = document.createElement('div');
+        right.className = 'arv2-right';
+        const pctEl = document.createElement('div');
+        pctEl.className = 'arv2-pct' + (state.choice === 'yes' ? ' yes' : state.choice === 'no' ? ' no' : '');
+        pctEl.textContent = pct !== null ? pct + '%' : '—';
+        const chev = document.createElement('div');
+        chev.className = 'arv2-chevron'; chev.textContent = '▼';
+        right.appendChild(pctEl); right.appendChild(chev);
+
+        head.appendChild(labelEl); head.appendChild(right);
+        row.appendChild(head);
+
+        const body = document.createElement('div');
+        body.className = 'arv2-body';
+
+        const yn = document.createElement('div');
+        yn.className = 'arv2-yn';
+        const yesBtn = document.createElement('button');
+        yesBtn.className = 'arv2-yn-btn yes' + (state.choice === 'yes' ? ' active' : '');
+        yesBtn.innerHTML = '<span class="ic">✓</span> Sì';
+        yesBtn.onclick = (e) => { e.stopPropagation(); registerObservation(side, act.id, 'yes'); };
+        const noBtn = document.createElement('button');
+        noBtn.className = 'arv2-yn-btn no' + (state.choice === 'no' ? ' active' : '');
+        noBtn.innerHTML = '<span class="ic">✕</span> No';
+        noBtn.onclick = (e) => { e.stopPropagation(); registerObservation(side, act.id, 'no'); };
+        yn.appendChild(yesBtn); yn.appendChild(noBtn);
+        body.appendChild(yn);
+
+        const counts = document.createElement('div');
+        counts.className = 'arv2-counts';
+        counts.innerHTML = '<span class="c-yes">Sì <b>' + state.yes + '</b></span>'
+                        + '<span>Totale <b>' + total + '</b></span>'
+                        + '<span class="c-no">No <b>' + state.no + '</b></span>';
+        body.appendChild(counts);
+
+        if (state.choice === 'yes' && act.subYes.length > 0) {
+          body.appendChild(renderSubBlock('Se Sì', act.subYes, 'yes', act.equalWeights));
+        }
+        if (state.choice === 'no') {
+          if (act.subNo.length > 0) {
+            body.appendChild(renderSubBlock('Se No', act.subNo, 'no', act.equalWeights));
+          } else if (act.noPlaceholder) {
+            const block = document.createElement('div');
+            block.className = 'arv2-subs-block';
+            const lbl = document.createElement('div');
+            lbl.className = 'arv2-subs-lbl no';
+            lbl.textContent = 'Se No';
+            const subs = document.createElement('div');
+            subs.className = 'arv2-subs';
+            const tag = document.createElement('span');
+            tag.className = 'arv2-sub note';
+            tag.textContent = '✎ ' + act.noPlaceholder;
+            subs.appendChild(tag);
+            block.appendChild(lbl); block.appendChild(subs);
+            body.appendChild(block);
+          }
+        }
+
+        row.appendChild(body);
+        container.appendChild(row);
+      });
+
+      const totalEl = document.getElementById('total' + side);
+      const avgEl = document.getElementById('avg' + side);
+      const filled = ACTION_CATALOG.filter(a => (observations[side][a.id].yes + observations[side][a.id].no) > 0);
+      const avg = filled.length > 0
+        ? Math.round(filled.reduce((s,a) => {
+            const st = observations[side][a.id];
+            return s + (st.yes / (st.yes + st.no) * 100);
+          }, 0) / filled.length)
+        : 0;
+      if (totalEl) totalEl.textContent = totalActions;
+      if (avgEl)   avgEl.textContent = filled.length > 0 ? avg + '%' : '—';
+    });
+  }
+
+  function renderSubBlock(lblTxt, subs, kind, equalWeights) {
+    const block = document.createElement('div');
+    block.className = 'arv2-subs-block';
+    const lbl = document.createElement('div');
+    lbl.className = 'arv2-subs-lbl ' + kind;
+    lbl.textContent = lblTxt + (equalWeights ? ' · peso uguale' : '');
+    const subsEl = document.createElement('div');
+    subsEl.className = 'arv2-subs';
+    subs.forEach(s => {
+      const tag = document.createElement('span');
+      tag.className = 'arv2-sub ' + kind;
+      tag.textContent = s;
+      subsEl.appendChild(tag);
+    });
+    block.appendChild(lbl);
+    block.appendChild(subsEl);
+    return block;
+  }
+
+  function registerObservation(side, actionId, choice) {
+    const state = observations[side][actionId];
+    state.choice = choice;
+    state.expanded = true;
+    if (choice === 'yes') state.yes += 1; else state.no += 1;
+    if (choice === 'yes') {
+      if (side === 'A') scoreA++; else scoreB++;
+    }
+    eventsStack.push({ side, actionId, choice });
+    addLogEvent(side, actionId, choice);
+    updateScores();
+    renderActions();
+  }
+
+  function addLogEvent(side, actionId, choice) {
+    const log = document.getElementById('actionLog');
+    if (!log) return;
+    const act = ACTION_CATALOG.find(a => a.id === actionId);
+    const player = side === 'A' ? 'Rossi' : 'Bianchi';
+    const span = document.createElement('span');
+    span.className = 'log-event ' + (side === 'A' ? 'red' : 'blue');
+    const now = new Date();
+    const t = String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+    const mark = choice === 'yes'
+      ? '<span style="color:#4ADE80; font-weight:800;">✓</span>'
+      : '<span style="color:#FF6B7A; font-weight:800;">✕</span>';
+    span.innerHTML = '<span class="t">' + t + '</span>' + mark + ' ' + act.label + ' · ' + player;
+    log.insertBefore(span, log.firstChild);
+  }
+
+  function undoAction() {
+    const last = eventsStack.pop();
+    if (!last) return;
+    const state = observations[last.side][last.actionId];
+    if (last.choice === 'yes') {
+      state.yes = Math.max(0, state.yes - 1);
+      if (last.side === 'A') scoreA = Math.max(0, scoreA - 1);
+      else scoreB = Math.max(0, scoreB - 1);
+    } else {
+      state.no = Math.max(0, state.no - 1);
+    }
+    updateScores();
+    renderActions();
+    const log = document.getElementById('actionLog');
+    if (log && log.children.length > 1) log.removeChild(log.children[1]);
+  }
+
+  function toggleOffline() {
+    document.getElementById('offlineBadge').classList.toggle('show');
+  }
+
+  function ensureActionsRendered() {
+    if (document.getElementById('actionsA')) renderActions();
+  }
+  window.addEventListener('hashchange', () => {
+    if ((location.hash.replace('#/','') || 'dashboard') === 'live') {
+      ensureActionsRendered();
+    }
+  });
+  ensureActionsRendered();
+
+  /* Fake timer tick */
+  let sec = 134;
+  setInterval(() => {
+    sec++;
+    const m = Math.floor(sec / 60), s = sec % 60;
+    const t = document.getElementById('timer');
+    if (t) t.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }, 1000);
+</script>
+
+</body>
+</html>
