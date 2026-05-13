@@ -4,34 +4,34 @@ import {
   Users,
   Shield,
   Settings,
-  Upload,
-  Plus,
+  Swords,
   LogOut,
 } from "lucide-react";
 import clsx from "clsx";
 import { useAuthStore } from "../../stores/useAuthStore";
+import { useMatchesStore } from "../../stores/useMatchesStore";
 
 const navItems = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/athletes", label: "Atleti", icon: Users },
   { to: "/teams", label: "Squadre", icon: Shield },
-  { to: "/match/new", label: "Nuovo match", icon: Plus },
+  { to: "/match/new", label: "Match", icon: Swords },
 ];
 
 const configItems = [
   { to: "/settings/actions", label: "Azioni", icon: Settings },
-  { to: "/import", label: "Import Excel", icon: Upload },
 ];
 
 export function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const hasLive = useMatchesStore((s) => Object.values(s.matches).some((m) => m.status === "live"));
 
   const linkCls = ({ isActive }: { isActive: boolean }) =>
     clsx(
       "flex items-center gap-3 px-3.5 py-2.5 text-sm font-medium border-l-2 transition-colors",
       isActive
-        ? "text-white bg-bg-panel border-brand-red"
+        ? "text-white bg-brand-red/20 border-brand-red"
         : "text-text-dim border-transparent hover:text-white hover:bg-bg-panel",
     );
 
@@ -53,6 +53,9 @@ export function Sidebar() {
           <NavLink key={n.to} to={n.to} end={n.to === "/"} className={linkCls}>
             <n.icon size={16} />
             {n.label}
+            {n.label === "Match" && hasLive && (
+              <span className="ml-auto w-2 h-2 rounded-full bg-brand-red-hot animate-pulse" />
+            )}
           </NavLink>
         ))}
         <div className="px-3.5 mt-4 mb-1 text-[11px] uppercase tracking-widest2 text-text-dim font-semibold">

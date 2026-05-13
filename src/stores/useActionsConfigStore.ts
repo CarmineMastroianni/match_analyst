@@ -12,6 +12,7 @@ interface ActionsConfigState {
   toggleActive: (id: ID) => void;
   toggleMain: (id: ID) => void;
   reorder: (weapon: Weapon, orderedIds: ID[]) => void;
+  remove: (id: ID) => void;
   reset: () => void;
 }
 
@@ -50,6 +51,12 @@ export const useActionsConfigStore = create<ActionsConfigState>()(
             if (cur && cur.weapon === weapon) next[id] = { ...cur, sortOrder: idx };
           });
           return { actions: next };
+        }),
+      remove: (id) =>
+        set((s) => {
+          const { [id]: _, ...rest } = s.actions;
+          void _;
+          return { actions: rest };
         }),
       reset: () => set({ actions: {} }),
     }),

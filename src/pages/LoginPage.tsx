@@ -17,7 +17,8 @@ type FormData = z.infer<typeof schema>;
 export function LoginPage() {
   const nav = useNavigate();
   const loginAs = useAuthStore((s) => s.loginAs);
-  const teams = useTeamsStore((s) => s.list());
+  const teamsMap = useTeamsStore((s) => s.teams);
+  const teams = Object.values(teamsMap).sort((a, b) => a.name.localeCompare(b.name, "it"));
   const [role, setRole] = useState<Role>("analyst");
   const { register, handleSubmit, formState, setValue } = useForm<FormData>({
     defaultValues: { email: "analyst@demo.it", password: "demo" },

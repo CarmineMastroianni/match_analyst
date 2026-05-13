@@ -1,4 +1,6 @@
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
@@ -8,13 +10,26 @@ import { useAthletesStore } from "../stores/useAthletesStore";
 import { useActionsConfigStore } from "../stores/useActionsConfigStore";
 import { actionColor } from "../hooks/useStats";
 import { fmtDate } from "../utils/format";
+import { Trash2, ChevronLeft } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 export function MatchRecapPage() {
   const { id = "" } = useParams();
+  const navigate = useNavigate();
   const m = useMatchesStore((s) => s.get(id));
   const events = useMatchesStore((s) => s.events[id] ?? []);
   const aGet = useAthletesStore((s) => s.get);
-  const actions = useActionsConfigStore((s) => s.list());
+  const actions = useActionsConfigStore(useShallow((s) => s.list()));
+
+  const [notes, setNotes] = useState(m?.notes ?? "");
+  const [notesSaved, setNotesSaved] = useState(false);
 
   if (!m) return <Navigate to="/" replace />;
   const athA = aGet(m.athleteAId);
@@ -28,8 +43,37 @@ export function MatchRecapPage() {
       })
       .filter((d) => d.value > 0);
 
+  const comparisonData = actions
+    .map((act) => ({
+      name: act.code,
+      A: events.filter((e) => e.athleteId === m.athleteAId && e.actionTypeId === act.id).length,
+      B: events.filter((e) => e.athleteId === m.athleteBId && e.actionTypeId === act.id).length,
+    }))
+    .filter((d) => d.A > 0 || d.B > 0);
+
+  function handleDelete() {
+    if (window.confirm("Sei sicuro di voler eliminare questo match?")) {
+      useMatchesStore.getState().remove(id);
+      navigate("/");
+    }
+  }
+
+  function handleSaveNotes() {
+    useMatchesStore.getState().setNotes(id, notes);
+    setNotesSaved(true);
+    setTimeout(() => setNotesSaved(false), 2000);
+  }
+
   return (
     <>
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-1.5 text-text-dim hover:text-white text-sm mb-4"
+      >
+        <ChevronLeft size={16} />
+        Indietro
+      </button>
+
       <div className="bg-gradient-to-br from-bg-dark to-bg-panel-2 text-white p-7 mb-6 relative overflow-hidden">
         <span className="absolute top-0 left-0 h-1 w-24 bg-brand-red" />
         <Badge tone={m.status === "done" ? "green" : "neutral"}>{m.status.toUpperCase()}</Badge>
@@ -67,6 +111,47 @@ export function MatchRecapPage() {
         </Card>
       </div>
 
+      {comparisonData.length > 0 && (
+        <Card title="Confronto azioni" accent="blue" className="mb-6">
+          <div className="text-[11px] font-cond uppercase tracking-widest2 text-text-dark-dim mb-3 flex gap-4">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 bg-brand-red" />
+              {athA?.lastName ?? "A"}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="inline-block w-3 h-3 bg-brand-blue-hi" />
+              {athB?.lastName ?? "B"}
+            </span>
+          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={comparisonData} barGap={2} barCategoryGap="20%">
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 11, fill: "#888", fontFamily: "inherit" }}
+                axisLine={false}
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "#888", fontFamily: "inherit" }}
+                axisLine={false}
+                tickLine={false}
+                allowDecimals={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "#1a1a2e",
+                  border: "1px solid #2a2a3e",
+                  fontSize: 12,
+                  color: "#fff",
+                }}
+              />
+              <Bar dataKey="A" name={athA?.lastName ?? "A"} fill="#C8102E" radius={0} />
+              <Bar dataKey="B" name={athB?.lastName ?? "B"} fill="#3B5FD9" radius={0} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      )}
+
       <Card title="Timeline azioni" accent="red">
         <ol className="text-sm divide-y divide-border-light">
           {events.map((e, i) => {
@@ -99,9 +184,31 @@ export function MatchRecapPage() {
         </ol>
       </Card>
 
-      <div className="flex justify-end gap-2 mt-6">
-        <Link to="/"><Button variant="ghost">Torna alla dashboard</Button></Link>
-        <Button disabled title="Disponibile nel Tier 4">Esporta PDF</Button>
+      <Card title="Note match" accent="blue" className="mt-6">
+        <textarea
+          className="w-full min-h-[140px] p-3 border border-border-light text-sm bg-bg-light-2 resize-y"
+          placeholder="Aggiungi note su questo match…"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
+        <div className="flex justify-end mt-3">
+          <Button
+            onClick={handleSaveNotes}
+            variant={notesSaved ? "ghost" : "primary"}
+          >
+            {notesSaved ? "Salvato ✓" : "Salva note"}
+          </Button>
+        </div>
+      </Card>
+
+      <div className="flex justify-between gap-2 mt-6">
+        <Button variant="danger" icon={<Trash2 size={14} />} onClick={handleDelete}>
+          Elimina match
+        </Button>
+        <div className="flex gap-2">
+          <Link to="/"><Button variant="ghost">Torna alla dashboard</Button></Link>
+          <Button disabled title="Disponibile nel Tier 4">Esporta PDF</Button>
+        </div>
       </div>
     </>
   );

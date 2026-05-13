@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useShallow } from "zustand/react/shallow";
 import { Avatar } from "../components/ui/Avatar";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
@@ -21,7 +22,7 @@ export function LiveMatchPage() {
   const match = useMatchesStore((s) => s.get(id));
   const aGet = useAthletesStore((s) => s.get);
   const events = useMatchesStore((s) => s.events[id] ?? []);
-  const actions = useActionsConfigStore((s) => s.mainActive("foil"));
+  const actions = useActionsConfigStore(useShallow((s) => s.mainActive("foil")));
   const pushEvent = useMatchesStore((s) => s.pushEvent);
   const popLastEvent = useMatchesStore((s) => s.popLastEvent);
   const updateScore = useMatchesStore((s) => s.updateScore);
@@ -98,7 +99,6 @@ export function LiveMatchPage() {
     if (newA >= target || newB >= target) {
       setStatus(match.id, "done");
       live.endMatch();
-      setTimeout(() => nav(`/match/${match.id}/recap`), 400);
     }
   }
 
@@ -122,8 +122,29 @@ export function LiveMatchPage() {
     nav(`/match/${match.id}/recap`);
   }
 
+  const isDone = match.status === "done";
+
   return (
     <div className="min-h-screen bg-bg-dark text-white flex flex-col">
+      {/* MATCH DONE OVERLAY */}
+      {isDone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+          <div className="bg-bg-panel border border-brand-red text-white p-10 flex flex-col items-center gap-6 max-w-sm w-full mx-4">
+            <span className="text-brand-red font-cond font-extrabold uppercase tracking-widest text-sm">Match terminato</span>
+            <div className="font-cond font-extrabold text-6xl tabular-nums leading-none">
+              <span className={match.scoreA > match.scoreB ? "text-brand-red-hot" : ""}>{match.scoreA}</span>
+              <span className="text-text-dim mx-3">:</span>
+              <span className={match.scoreB > match.scoreA ? "text-brand-red-hot" : ""}>{match.scoreB}</span>
+            </div>
+            <div className="font-cond font-bold uppercase text-lg text-center">
+              {match.scoreA > match.scoreB ? athA?.lastName : athB?.lastName} vince!
+            </div>
+            <Button size="lg" onClick={() => nav(`/match/${match.id}/recap`)}>
+              Vedi recap →
+            </Button>
+          </div>
+        </div>
+      )}
       {/* TOP BAR */}
       <div className="px-5 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">

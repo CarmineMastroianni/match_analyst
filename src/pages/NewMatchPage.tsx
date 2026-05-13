@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
+import { useShallow } from "zustand/react/shallow";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Select } from "../components/ui/Input";
@@ -10,12 +12,18 @@ import type { MatchFormat } from "../types/domain";
 
 export function NewMatchPage() {
   const nav = useNavigate();
-  const athletes = useAthletesStore((s) => s.list());
+  const [searchParams] = useSearchParams();
+  const athletes = useAthletesStore(useShallow((s) => s.list()));
   const upsert = useMatchesStore((s) => s.upsertMatch);
   const analystId = useAuthStore((s) => s.user?.id ?? "user_analyst");
 
+  const preselectedA = searchParams.get("athleteA") ?? "";
+  const initialA = athletes.some((a) => a.id === preselectedA)
+    ? preselectedA
+    : athletes[0]?.id ?? "";
+
   const [step, setStep] = useState(1);
-  const [athleteAId, setA] = useState(athletes[0]?.id ?? "");
+  const [athleteAId, setA] = useState(initialA);
   const [athleteBId, setB] = useState(athletes[1]?.id ?? "");
   const [format, setFormat] = useState<MatchFormat>("a15");
 
@@ -41,6 +49,13 @@ export function NewMatchPage() {
 
   return (
     <>
+      <button
+        onClick={() => nav(-1)}
+        className="flex items-center gap-1.5 text-text-dim hover:text-white text-sm mb-4"
+      >
+        <ChevronLeft size={16} />
+        Indietro
+      </button>
       <h1 className="font-cond font-bold uppercase text-[40px] leading-none mb-6">Nuovo match</h1>
       <div className="flex gap-2 mb-6">
         {[1, 2, 3].map((s) => (
